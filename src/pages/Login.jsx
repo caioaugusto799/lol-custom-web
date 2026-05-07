@@ -18,6 +18,11 @@ function Login() {
     setError(null);
     setMessage(null);
 
+    if (!email.trim() || !password.trim()) {
+      setError("Preencha e-mail e senha.");
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -31,32 +36,7 @@ function Login() {
       navigate("/");
     } catch (err) {
       console.error(err);
-      setError("Erro ao fazer login. Confira e-mail e senha.");
-    }
-  }
-
-  async function handleSignUp(e) {
-    e.preventDefault();
-
-    setError(null);
-    setMessage(null);
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setMessage(
-        "Conta criada. Se o Supabase pedir confirmação, verifique seu e-mail antes de entrar."
-      );
-    } catch (err) {
-      console.error(err);
-      setError("Erro ao criar conta.");
+      setError(`Erro ao fazer login: ${err.message}`);
     }
   }
 
@@ -64,7 +44,11 @@ function Login() {
     <main>
       <h1>Entrar</h1>
 
-      <form>
+      <p style={{ color: "#94a3b8" }}>
+        Acesso liberado apenas para usuários autorizados pelo administrador.
+      </p>
+
+      <form onSubmit={handleLogin}>
         <label>
           E-mail:{" "}
           <input
@@ -85,12 +69,8 @@ function Login() {
           />
         </label>
 
-        <button type="submit" onClick={handleLogin} style={{ marginLeft: "16px" }}>
+        <button type="submit" style={{ marginLeft: "16px" }}>
           Entrar
-        </button>
-
-        <button type="button" onClick={handleSignUp} style={{ marginLeft: "8px" }}>
-          Criar conta
         </button>
       </form>
 
