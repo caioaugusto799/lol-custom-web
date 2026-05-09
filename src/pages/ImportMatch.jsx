@@ -201,23 +201,40 @@ function ImportMatch() {
     return null;
   }
 
-  function findPlayerByNickname(nickname) {
-    return players.find(
-      (player) => player.nickname.toLowerCase() === nickname.toLowerCase()
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function findPlayerByIdentifier(identifier) {
+  const search = normalizeText(identifier);
+
+  return players.find((player) => {
+    const nickname = normalizeText(player.nickname);
+    const riotName = normalizeText(player.riot_name);
+    const tagLine = normalizeText(player.tag_line);
+
+    const fullRiotId = tagLine ? `${riotName}#${tagLine}` : riotName;
+
+    return (
+      search === nickname ||
+      search === riotName ||
+      search === fullRiotId
     );
-  }
+  });
+}
 
-  function buildRowsWithPlayers(rows) {
-    return rows.map((row) => {
-      const player = findPlayerByNickname(row.player);
+ function buildRowsWithPlayers(rows) {
+  return rows.map((row) => {
+    const player = findPlayerByIdentifier(row.player);
 
-      return {
-        ...row,
-        player_id: player?.id || null,
-        player_found: Boolean(player),
-      };
-    });
-  }
+    return {
+      ...row,
+      player_id: player?.id || null,
+      player_found: Boolean(player),
+      matched_player: player || null,
+    };
+  });
+}
 
   function handlePreview() {
     setError(null);
@@ -333,11 +350,23 @@ function ImportMatch() {
   }
 
   const previewColumns = [
-    {
-      key: "status",
-      label: "Status",
-      render: (row) => (row.player_found ? "OK" : "Não cadastrado"),
-    },
+  {
+    key: "status",
+    label: "Status",
+    render: (row) => (row.player_found ? "OK" : "Não cadastrado"),
+  },
+  {
+    key: "matched_player",
+    label: "Jogador encontrado",
+    render: (row) =>
+      row.matched_player
+        ? `${row.matched_player.nickname} ${
+            row.matched_player.riot_name
+              ? `(${row.matched_player.riot_name}#${row.matched_player.tag_line || "-"})`
+              : ""
+          }`
+        : "-",
+  },
     { key: "team", label: "Time" },
     { key: "player", label: "Jogador" },
     { key: "champion", label: "Campeão" },
