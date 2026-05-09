@@ -81,7 +81,7 @@ function Matches() {
           game_date: match.game_date,
           duration_seconds: match.duration_seconds,
           duration_minutes:
-            Math.round((match.duration_seconds / 60) * 100) / 100,
+            Math.round((Number(match.duration_seconds || 0) / 60) * 100) / 100,
           patch: match.patch,
           blue_team_win: match.blue_team_win,
           winner: match.blue_team_win ? "blue" : "red",
@@ -196,13 +196,21 @@ function Matches() {
       return;
     }
 
+    if (!editDurationMinutes || Number(editDurationMinutes) <= 0) {
+      setError("A duração da partida precisa ser maior que zero.");
+      return;
+    }
+
     try {
+      const blueTeamWin = editWinner === "blue";
+      const durationSeconds = Number(editDurationMinutes) * 60;
+
       const { error: matchError } = await supabase
         .from("matches")
         .update({
-          duration_seconds: Number(editDurationMinutes) * 60,
-          patch: editPatch || null,
-          blue_team_win: editWinner === "blue",
+          duration_seconds: durationSeconds,
+          patch: editPatch.trim() || null,
+          blue_team_win: blueTeamWin,
         })
         .eq("id", editingMatch.id);
 
@@ -210,31 +218,28 @@ function Matches() {
         throw matchError;
       }
 
-      const { data: participants, error: participantsLoadError } =
-        await supabase
-          .from("match_participants")
-          .select("*")
-          .eq("match_id", editingMatch.id);
+      const { error: blueError } = await supabase
+        .from("match_participants")
+        .update({
+          win: blueTeamWin,
+        })
+        .eq("match_id", editingMatch.id)
+        .eq("team", "blue");
 
-      if (participantsLoadError) {
-        throw participantsLoadError;
+      if (blueError) {
+        throw blueError;
       }
 
-      for (const participant of participants || []) {
-        const participantWin =
-          (editWinner === "blue" && participant.team === "blue") ||
-          (editWinner === "red" && participant.team === "red");
+      const { error: redError } = await supabase
+        .from("match_participants")
+        .update({
+          win: !blueTeamWin,
+        })
+        .eq("match_id", editingMatch.id)
+        .eq("team", "red");
 
-        const { error: participantUpdateError } = await supabase
-          .from("match_participants")
-          .update({
-            win: participantWin,
-          })
-          .eq("id", participant.id);
-
-        if (participantUpdateError) {
-          throw participantUpdateError;
-        }
+      if (redError) {
+        throw redError;
       }
 
       setError(null);
