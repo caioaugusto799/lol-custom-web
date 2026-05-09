@@ -53,6 +53,7 @@ function Navbar() {
       <Link to="/roles">Rotas</Link>
       <Link to="/new-match">Cadastrar Partida</Link>
       <Link to="/head-to-head">Confronto</Link>
+      <Link to="/import-match">Importar Partida</Link>
 
       <span style={{ marginLeft: "auto" }}>
         {user ? (
