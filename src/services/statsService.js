@@ -254,7 +254,7 @@ export function calculateChampionStats(participants, minGames = 1) {
 }
 
 export function calculateHighlights(players, matches, participants) {
-  const playerStats = calculateAllPlayerStats(players, participants, 1);
+  const playerStats = calculateAllPlayerStats(players, participants, 3);
   const championStats = calculateChampionStats(participants, 1);
 
   return {
